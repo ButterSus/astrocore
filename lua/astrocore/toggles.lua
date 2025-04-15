@@ -12,6 +12,9 @@ local M = {}
 local function bool2str(bool) return bool and "on" or "off" end
 local function ui_notify(silent, ...) return not silent and require("astrocore").notify(...) end
 
+-- Store the initial value of signcolumn per window
+local window_initial_signcolumn = {}
+
 --- Toggle rooter autochdir
 ---@param silent? boolean if true then don't sent a notification
 function M.autochdir(silent)
@@ -111,16 +114,44 @@ function M.statusline(silent)
   ui_notify(silent, ("statusline %s"):format(status))
 end
 
---- Toggle signcolumn="auto"|"no"
+--- Toggle signcolumn based on the initial value for the CURRENT window.
+--- If initial window value was "number", cycle: number -> auto -> no -> number.
+--- Otherwise, cycle: yes -> auto -> no -> yes.
 ---@param silent? boolean if true then don't sent a notification
 function M.signcolumn(silent)
-  if vim.wo.signcolumn == "no" then
-    vim.wo.signcolumn = "yes"
-  elseif vim.wo.signcolumn == "yes" then
-    vim.wo.signcolumn = "auto"
+  local winid = vim.api.nvim_get_current_win()
+  -- If initial value for this window isn't stored, store it now
+  if window_initial_signcolumn[winid] == nil then window_initial_signcolumn[winid] = vim.wo.signcolumn end
+
+  local initial_val = window_initial_signcolumn[winid]
+  local current_val = vim.wo.signcolumn
+  local next_val
+
+  if initial_val == "number" then
+    -- Cycle: number -> auto -> no -> number
+    if current_val == "number" then
+      next_val = "auto"
+    elseif current_val == "auto" then
+      next_val = "no"
+    elseif current_val == "no" then
+      next_val = "number"
+    else -- Fallback for unexpected values in this cycle
+      next_val = "number" -- Reset to the start of the 'number' cycle
+    end
   else
-    vim.wo.signcolumn = "no"
+    -- Cycle: yes -> auto -> no -> yes
+    if current_val == "yes" then
+      next_val = "auto"
+    elseif current_val == "auto" then
+      next_val = "no"
+    elseif current_val == "no" then
+      next_val = "yes"
+    else -- Fallback for unexpected values (including "number" if initial wasn't "number")
+      next_val = "yes" -- Reset to the start of the default cycle
+    end
   end
+
+  vim.wo.signcolumn = next_val
   ui_notify(silent, ("signcolumn=%s"):format(vim.wo.signcolumn))
 end
 
@@ -256,5 +287,13 @@ function M.virtual_lines(silent)
   vim.diagnostic.config { virtual_lines = new_virtual_lines }
   ui_notify(silent, ("Virtual lines %s"):format(bool2str(new_virtual_lines)))
 end
+
+-- Autocommand to clean up window-specific context when a window closes
+local group = vim.api.nvim_create_augroup("AstrocoreTogglesCleanup", { clear = true })
+vim.api.nvim_create_autocmd("WinClosed", {
+  group = group,
+  pattern = "*",
+  callback = function(args) window_initial_signcolumn[args.id] = nil end,
+})
 
 return M
