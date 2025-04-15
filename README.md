@@ -1,211 +1,128 @@
-# 🧰 AstroCore
+# ButterSus AstroCore Repository
 
-AstroCore provides the core Lua API that powers [AstroNvim](https://github.com/AstroNvim/AstroNvim). It provides an interface for configuration auto commands, user commands, on_key functions, key mappings, and more as well as a Lua API of common utility functions.
+A personalized fork of the [AstroNvim Core](https://github.com/AstroNvim/astrocore) with my custom configurations, enhancements, and contributions.
 
-## ✨ Features
+<div align="center">
+  <img src="https://astronvim.com/logo/astronvim.svg" width="110" height="100" />
+</div>
 
-- Unified interface for configuring auto commands, user commands, key maps, on key functions
-- Easy toggles of UI/UX elements and features
-- Universal interface for setting up git worktrees
-- Tab local buffer management for a clean `tabline`
-- Project root detection with automatic `cd` features
-- Session management with [resession.nvim][resession]
+## Repository Structure
 
-## ⚡️ Requirements
+This repository is organized with the following branch structure:
 
-- Neovim >= 0.10
-- [lazy.nvim](https://github.com/folke/lazy.nvim)
-- [resession.nvim][resession] (_optional_)
+- `personal` (default): My customized version with personal settings and enhancements
+- `main`: Mirror of the upstream AstroNvim/astrocore repository
 
-## 📦 Installation
+## Using This Repository
 
-Install the plugin with the lazy plugin manager:
+### In Your AstroNvim Config
+
+To use my personal branch of the astrocore repository instead of the official one, modify your `lua/plugins/astrocore.lua` file:
 
 ```lua
 return {
-  "AstroNvim/astrocore",
-  lazy = false, -- disable lazy loading
-  priority = 10000, -- load AstroCore first
+  "ButterSus/astrocore", -- Use my fork instead of the official repo
+  -- Default branch is 'personal' so no need to specify
   opts = {
-    -- set configuration options  as described below
+    -- Your core configuration options here
   },
 }
 ```
 
-> 💡 If you want to enable session management with [resession.nvim][resession], enable it in the setup:
+If you want to specifically use the personal branch (though it's the default):
 
 ```lua
-require("resession").setup {
-  extensions = {
-    astrocore = {},
+return {
+  { "ButterSus/astrocore", branch = "personal" },
+  opts = {
+    -- Your core configuration options here
   },
 }
 ```
 
-## ⚙️ Configuration
+### Custom Features
 
-**AstroCore** comes with no defaults, but can be configured fully through the `opts` table in lazy. Here are descriptions of the options and some example usages:
+This fork includes:
 
-```lua
----@type AstroCoreConfig
-local opts = {
-  -- easily configure auto commands
-  autocmds = {
-    -- first key is the `augroup` (:h augroup)
-    highlighturl = {
-      -- list of auto commands to set
-      {
-        -- events to trigger
-        event = { "VimEnter", "FileType", "BufEnter", "WinEnter" },
-        -- the rest of the autocmd options (:h nvim_create_autocmd)
-        desc = "URL Highlighting",
-        callback = function() require("astrocore").set_url_match() end,
-      },
-    },
-  },
-  -- easily configure user commands
-  commands = {
-    -- key is the command name
-    AstroReload = {
-      -- first element with no key is the command (string or function)
-      function() require("astrocore").reload() end,
-      -- the rest are options for creating user commands (:h nvim_create_user_command)
-      desc = "Reload AstroNvim (Experimental)",
-    },
-  },
-  -- Configure diagnostics options (`:h vim.diagnostic.config()`)
-  diagnostics = {
-    update_in_insert = false,
-  },
-  -- passed to `vim.filetype.add`
-  filetypes = {
-    -- see `:h vim.filetype.add` for usage
-    extension = {
-      foo = "fooscript",
-    },
-    filename = {
-      [".foorc"] = "fooscript",
-    },
-    pattern = {
-      [".*/etc/foo/.*"] = "fooscript",
-    },
-  },
-  -- Configuration of vim mappings to create
-  mappings = {
-    -- map mode (:h map-modes)
-    n = {
-      -- use vimscript strings for mappings
-      ["<C-s>"] = { ":w!<cr>", desc = "Save File" },
-      -- navigate buffer tabs with `H` and `L`
-      L = {
-        function() require("astrocore.buffer").nav(vim.v.count1) end,
-        desc = "Next buffer",
-      },
-      H = {
-        function() require("astrocore.buffer").nav(-vim.v.count1) end,
-        desc = "Previous buffer",
-      },
-      -- tables with just a `desc` key will be registered with which-key if it's installed
-      -- this is useful for naming menus
-      ["<leader>b"] = { desc = "Buffers" },
-    },
-  },
-  -- easily configure functions on key press
-  on_keys = {
-    -- first key is the namespace
-    auto_hlsearch = {
-      -- list of functions to execute on key press (:h vim.on_key)
-      function(char) -- example automatically disables `hlsearch` when not actively searching
-        if vim.fn.mode() == "n" then
-          local new_hlsearch = vim.tbl_contains({ "<CR>", "n", "N", "*", "#", "?", "/" }, vim.fn.keytrans(char))
-          if vim.opt.hlsearch:get() ~= new_hlsearch then vim.opt.hlsearch = new_hlsearch end
-        end
-      end,
-    },
-  },
-  -- easily configure vim options
-  options = {
-    -- first key is the type of option `vim.<first_key>`
-    opt = {
-      relativenumber = true, -- sets `vim.opt.relativenumber`
-      signcolumn = "auto", -- sets `vim.opt.relativenumber`
-    },
-    g = {
-      -- set global `vim.g` settings here
-    },
-  },
-  -- configure AstroNvim features
-  features = {
-    autopairs = true, -- enable or disable autopairs on start
-    cmp = true, -- enable or disable cmp on start
-    diagnostics = { virtual_text = true, virtual_lines = false }, -- enable or disable diagnostics features on start
-    highlighturl = true, -- enable or disable highlighting of urls on start
-    -- table for defining the size of the max file for all features, above these limits we disable features like treesitter.
-    large_buf = {
-      -- whether to enable large file detection for a buffer (must return false to disable)
-      -- first parameter is the buffer number, the second is the large buffer configuration table
-      -- return values:
-      --   - `true` or `nil` to continue and respects all changes made to the large buffer configuration table
-      --   - `false` to disable large file detection for the buffer
-      --   - a new table of large buffer options to use instead of the defaults
-      enabled = function(bufnr, config) end,
-      notify = true, -- whether or not to display a notification when a large file is detected
-      size = 1024 * 100, -- max file size (or false to disable check)
-      lines = 10000, -- max number of lines (or false to disable check)
-      line_length = 1000, -- average line length (or false to disable check)
-    },
-    notifications = true, -- enable or disable notifications on start
-  },
-  -- Enable git integration for detached worktrees
-  git_worktrees = {
-    { toplevel = vim.env.HOME, gitdir = vim.env.HOME .. "/.dotfiles" },
-  },
-  -- Configure project root detection, check status with `:AstroRootInfo`
-  rooter = {
-    -- list of detectors in order of prevalence, elements can be:
-    --   "lsp" : lsp detection
-    --   string[] : a list of directory patterns to look for
-    --   fun(bufnr: integer): string|string[] : a function that takes a buffer number and outputs detected roots
-    detector = {
-      "lsp", -- highest priority is getting workspace from running language servers
-      { ".git", "_darcs", ".hg", ".bzr", ".svn" }, -- next check for a version controlled parent directory
-      { "lua", "MakeFile", "package.json" }, -- lastly check for known project root files
-    },
-    -- ignore things from root detection
-    ignore = {
-      servers = {}, -- list of language server names to ignore (Ex. { "efm" })
-      dirs = {}, -- list of directory patterns (Ex. { "~/.cargo/*" })
-    },
-    -- automatically update working directory (update manually with `:AstroRoot`)
-    autochdir = false,
-    -- scope of working directory to change ("global"|"tab"|"win")
-    scope = "global",
-    -- show notification on every working directory change
-    notify = false,
-  },
-  -- Configuration table of session options for AstroNvim's session management powered by Resession
-  sessions = {
-    -- Configure auto saving
-    autosave = {
-      last = true, -- auto save last session
-      cwd = true, -- auto save session for each working directory
-    },
-    -- Patterns to ignore when saving sessions
-    ignore = {
-      dirs = {}, -- working directories to ignore sessions in
-      filetypes = { "gitcommit", "gitrebase" }, -- filetypes to ignore sessions
-      buftypes = {}, -- buffer types to ignore sessions
-    },
-  },
-}
+- Enhanced core functionality
+- Custom configurations and overrides for the AstroNvim core
+- Core settings optimized for my personal workflow
+- Additional utilities and helper functions
+
+## Git Workflow
+
+### For Maintaining This Repository
+
+I maintain this repository using the following git workflow:
+
+1. **Syncing with upstream**:
+
+   ```bash
+   git checkout main
+   git fetch upstream
+   git merge upstream/main
+   git push origin main
+
+   # Update personal branch with changes from main
+   git checkout personal
+   git rebase main
+   git push -f origin personal  # Force push as rebase rewrites history
+   ```
+
+2. **Contributing to upstream**:
+
+   ```bash
+   # Create feature branch from main (not personal)
+   git checkout main
+   git checkout -b feature/new-core-feature
+
+   # Make changes and commit
+   git add .
+   git commit -m "Add new core feature: feature-name"
+
+   # Push to fork
+   git push origin feature/new-core-feature
+
+   # Create PR to upstream through GitHub interface
+   ```
+
+3. **Adding personal customizations**:
+   ```bash
+   git checkout personal
+   # Make core changes or enhancements
+   git commit -m "Add personal customization for core functionality"
+   git push origin personal
+   ```
+
+### For Contributors
+
+If you want to contribute to my personal fork:
+
+1. Fork this repository
+2. Create a branch for your feature from the `personal` branch
+3. Submit a pull request to the `personal` branch of this repository
+
+## Initial Setup
+
+If you want to set up a similar workflow for your own fork:
+
+```bash
+# Clone your fork
+git clone https://github.com/yourusername/astrocore.git
+cd astrocore
+
+# Add upstream remote
+git remote add upstream https://github.com/AstroNvim/astrocore.git
+
+# Create personal branch
+git checkout -b personal
+
+# Set personal as default branch (in GitHub settings)
+
+# Push to your fork
+git push -u origin personal
 ```
 
-## 📦 API
+## Questions or Issues?
 
-**AstroCore** provides a Lua API with utility functions. This can be viewed with `:h astrocore` or in the repository at [doc/api.md](doc/api.md)
-
-[resession]: https://github.com/stevearc/resession.nvim/
-
-## 🚀 Contributing
-
-If you plan to contribute, please check the [contribution guidelines](https://github.com/AstroNvim/.github/blob/main/CONTRIBUTING.md) first.
+Feel free to open an issue if you have any questions or encounter problems using my fork.
