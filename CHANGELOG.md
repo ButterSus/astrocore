@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.0.5](https://github.com/AstroNvim/astrocore/compare/v2.0.4...v2.0.5) (2025-04-30)
+
+
+### Bug Fixes
+
+* **rooter:** improve `exists` function ([1b96f40](https://github.com/AstroNvim/astrocore/commit/1b96f40c76d7ff792515d5d41c8f31081fd3c5b0))
+
+## [2.0.4](https://github.com/AstroNvim/astrocore/compare/v2.0.3...v2.0.4) (2025-04-28)
+
+
+### Bug Fixes
+
+* improve rooter docstring ([3c79603](https://github.com/AstroNvim/astrocore/commit/3c7960313120ea6f58196aa27b14760a7c459955))
+
+## [2.0.3](https://github.com/AstroNvim/astrocore/compare/v2.0.2...v2.0.3) (2025-04-23)
+
+
+### Bug Fixes
+
+* **buffer:** get the session config directly from the `astrocore` module ([89c080c](https://github.com/AstroNvim/astrocore/commit/89c080ce4e946adacbf5519eda97cd4c0c84a3a6))
+
+## [2.0.2](https://github.com/AstroNvim/astrocore/compare/v2.0.1...v2.0.2) (2025-04-21)
+
+
+### Reverts
+
+* remove `vim.lsp.foldexpr` hack ([6a58ab8](https://github.com/AstroNvim/astrocore/commit/6a58ab83503097bc7b3df0517fbc0b9377cc3142))
+
 ## [2.0.1](https://github.com/AstroNvim/astrocore/compare/v2.0.0...v2.0.1) (2025-04-09)
 
 
